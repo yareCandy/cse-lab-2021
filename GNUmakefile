@@ -88,6 +88,7 @@ clean:
 handin_ignore=$(clean_files) core* *log
 handin_file=lab$(LAB).tgz
 labdir=$(shell basename $(PWD))
+SHELL:=/usr/bin/bash
 handin: 
 	@bash -c "cd ../; tar -X <(tr ' ' '\n' < <(echo '$(handin_ignore)')) -czvf $(handin_file) $(labdir); mv $(handin_file) $(labdir); cd $(labdir)"
 	@echo Please modify lab2.tgz to lab2_[your student id].tgz and upload it to Canvas

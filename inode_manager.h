@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "extent_protocol.h" // TODO: delete it
 
+
 #define DISK_SIZE  1024*1024*16
 #define BLOCK_SIZE 512
 #define BLOCK_NUM  (DISK_SIZE/BLOCK_SIZE)
@@ -35,7 +36,7 @@ typedef struct superblock {
 class block_manager {
  private:
   disk *d;
-  std::map <uint32_t, int> using_blocks;
+  // std::map <uint32_t, int> using_blocks;
  public:
   block_manager();
   struct superblock sb;

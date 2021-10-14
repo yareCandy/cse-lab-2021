@@ -2,6 +2,7 @@
 #define chfs_client_h
 
 #include <string>
+#include <list>
 //#include "chfs_protocol.h"
 #include "extent_client.h"
 #include <vector>
@@ -28,12 +29,15 @@ class chfs_client {
   };
   struct dirent {
     std::string name;
-    chfs_client::inum inum;
+    chfs_client::inum inum; // 0 if entry is invalid
+    dirent(std::string n, chfs_client::inum i): name(n), inum(i) {}
   };
 
  private:
   static std::string filename(inum);
   static inum n2i(std::string);
+  void search(inum, const char *, bool &, inum &, int32_t &, std::string &);
+  int create_with_type(inum, const char *, inum &, uint32_t);
 
  public:
   chfs_client(std::string);
@@ -54,6 +58,10 @@ class chfs_client {
   int mkdir(inum , const char *, mode_t , inum &);
   
   /** you may need to add symbolic link related methods here.*/
+  int symlink(inum, const char *, const char*, inum &);
+  int readlink(inum, std::string &);
 };
 
 #endif 
+
+

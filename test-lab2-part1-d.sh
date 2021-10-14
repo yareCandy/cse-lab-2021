@@ -15,7 +15,7 @@ ln -s ${ORIG_FILE} ${DIR}/hosts
 diff ${ORIG_FILE} chfs1/hosts >/dev/null 2>&1
 if [ $? -ne 0 ];
 then
-    echo "failed SYMLINK test"
+    echo "failed SYMLINK test !!!!!"
     exit
 fi
 
