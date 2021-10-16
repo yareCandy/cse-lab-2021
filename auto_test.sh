@@ -1,10 +1,21 @@
 #!/bin/bash
+make clean &> /dev/null 2>&1
+make &> /dev/null 2>&1
 
-sudo ./start.sh
+./stop.sh >/dev/null 2>&1
+./stop.sh >/dev/null 2>&1
+./stop.sh >/dev/null 2>&1
+./stop.sh >/dev/null 2>&1
+./stop.sh >/dev/null 2>&1
 
-sudo ./test-lab1-part2-e.sh ./chfs1
+score=0
 
-sudo ./stop.sh
+mkdir chfs1 >/dev/null 2>&1
+mkdir chfs2 >/dev/null 2>&1
 
-# vim chfs_client1.log
-# rm -f ./chfs_client1.log
+./start.sh &> /dev/null 2>&1
+
+./test-lab2-part2-b.sh chfs2 
+
+./stop.sh &> /dev/null 2>&1
+

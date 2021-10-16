@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "rpc.h"
+#include "marshall.h"
 
 using namespace std;
 
@@ -27,6 +28,10 @@ public:
 
 	struct AskTaskResponse {
 		// Lab2: Your definition here.
+		mr_tasktype type;
+		int index;
+		int mapers;
+		string filename;
 	};
 
 	struct AskTaskRequest {
@@ -42,6 +47,24 @@ public:
 	};
 
 };
+
+inline marshall& operator<<(marshall& m, const mr_protocol::AskTaskResponse& response) {
+	m << response.type;
+	m << response.index;
+	m << response.mapers;
+	m << response.filename;
+	return m;
+}
+
+inline unmarshall& operator>>(unmarshall& m, mr_protocol::AskTaskResponse& response) {
+    int type;
+	m >> type;
+	m >> response.index;
+	m >> response.mapers;
+	m >> response.filename;
+    response.type = (mr_tasktype)type;
+	return m;
+}
 
 #endif
 
