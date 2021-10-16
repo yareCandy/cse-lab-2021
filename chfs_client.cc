@@ -90,13 +90,14 @@ chfs_client::search(inum parent, const char *name, bool& found, inum &ino_out,
     extent_protocol::attr a;
     ec->getattr(parent, a);
     ec->get(parent, content);
+    std::cout << "size: " << content.size() << " " << content << std::endl;
 
     const Entry *buf = (Entry*)const_cast<char*>(content.c_str());
     int32_t top = a.size / sizeof(Entry);
-    // printf("dir size: %u  top: %d\n", a.size, top);
+    printf("cc::search dir size: %u  top: %d\n", a.size, top);
     for(int32_t i = 0; i < top; ++i) {
         const Entry &tmp = buf[i];
-        // std::cout << "tmp name: " << tmp.name << std::endl;
+        std::cout << "file name: " << tmp.name << " ino: " << tmp.inum << std::endl;
         if(tmp.inum == 0 && pos == -1) { pos = i; continue; }
         if(!strcmp(tmp.name, name)) { //found
             ino_out = tmp.inum;
@@ -242,7 +243,6 @@ chfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
      * after create file or dir, you must remember to modify the parent infomation.
      */
     printf("--------- client create parent: %llu  name: %s -------------\n", parent, name);
-    printf("filename: %s\n", name);
     r = create_with_type(parent, name, ino_out, extent_protocol::T_FILE);
     printf("-------------- client create end ino_out: %llu --------------\n", ino_out);
     return r;

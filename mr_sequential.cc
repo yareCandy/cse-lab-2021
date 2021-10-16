@@ -11,11 +11,15 @@
 
 using namespace std;
 
-typedef struct {
+struct KeyVal {
     string key;
     string val;
-}
-KeyVal;
+    KeyVal() = default;
+    KeyVal(string &k, string &v) {
+        swap(k, key);
+        swap(v, val);
+    }
+};
 
 //
 // The map function is called once for each file of input. The first
@@ -28,7 +32,17 @@ vector<KeyVal> Map(const string &filename, const string &content)
 {
     // Your code goes here
     // Hints: split contents into an array of words.
-
+    stringstream ss(content);
+    vector<KeyVal> res;
+    string key, value;
+    cout << "Map:" << endl;
+    while(ss >> key) {
+        ss >> value;
+        KeyVal tmp(key, value);
+        cout << tmp.key << " " << tmp.val << endl; 
+        res.emplace_back(tmp);
+    }
+    return res;
 }
 
 //
@@ -40,7 +54,14 @@ string Reduce(const string &key, const vector <string> &values)
 {
     // Your code goes here
     // Hints: return the number of occurrences of the word.
-
+    int res = 0;
+    cout << "Reduce:" << endl;
+    for(auto &s: values) {
+        cout << s << " ";
+        res += s == key;
+    }
+    cout << endl;
+    return to_string(res);
 }
 
 int main(int argc, char ** argv)

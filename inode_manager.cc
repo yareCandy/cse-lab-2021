@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #define CEIL(x, y) (x) % (y) ? (x)/(y)+1 : (x)/(y);
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
 
 // disk layer -----------------------------------------
 
@@ -22,7 +23,7 @@ disk::read_block(blockid_t id, char *buf)
 
 void
 disk::write_block(blockid_t id, const char *buf)
-{  
+{
   if(id >= BLOCK_NUM) return;
   memcpy(blocks[id], buf, BLOCK_SIZE);
 }
@@ -229,7 +230,7 @@ inode_manager::put_inode(uint32_t inum, struct inode *ino)
   char buf[BLOCK_SIZE];
   struct inode *ino_disk;
 
-  // printf("\tim: put_inode %d\n", inum);
+  printf("\tim: put_inode %d\n", inum);
   if (ino == NULL)
     return;
 
@@ -239,7 +240,6 @@ inode_manager::put_inode(uint32_t inum, struct inode *ino)
   bm->write_block(IBLOCK(inum, bm->sb.nblocks), buf);
 }
 
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
 
 /* Get all the data of a file by inum. 
  * Return alloced data, should be freed by caller. */
@@ -301,6 +301,7 @@ inode_manager::write_file(uint32_t inum, const char *buf, int size)
     return;
   }
 
+  std::cout << "size: " << size << std::endl;
   blockid_t oldnums = CEIL(node->size, BLOCK_SIZE);
   blockid_t old1 = MIN(oldnums, NDIRECT);
   blockid_t old2 = oldnums - old1;
@@ -309,19 +310,23 @@ inode_manager::write_file(uint32_t inum, const char *buf, int size)
   blockid_t need2 = neednums - need1;
   uint32_t offset = 0;
   
-  //printf("\twrite file:\n\tinum: %d\n", inum);
-  //printf("\toldnums: %d old1: %d old2: %d neednums: %d need1: %d need2:%d\n", oldnums, old1, old2, neednums, need1, need2);
+  printf("im: write file\n\tinum: %d\n", inum);
+  printf("\toldnums: %d old1: %d old2: %d neednums: %d need1: %d need2:%d\n", oldnums, old1, old2, neednums, need1, need2);
 
   if(neednums > MAXFILE) {
       std::cout << "Warning: file size is too large!" << std::endl;
   }
 
+  char *data = (char*)malloc(neednums * BLOCK_SIZE);
+  memcpy(data, buf, size);
   uint32_t index = 0;
-  //std::cout << "block num: ";
+  
+  std::cout << "block num: ";
   while(index < MIN(old1, need1)) {
-    bm->write_block(node->blocks[index], buf+offset);
-    //std::cout << node->blocks[index] << " ";
+    std::cout << index << " " << node->blocks[index] << " ";
+    bm->write_block(node->blocks[index], data+offset);
     offset += BLOCK_SIZE;
+    std::cout << index << std::endl;
     ++index;
   }
   while(old1 > index) {
@@ -329,7 +334,7 @@ inode_manager::write_file(uint32_t inum, const char *buf, int size)
   }
   while(need1 > index) {
     blockid_t next_block = bm->alloc_block();
-    bm->write_block(next_block, buf+offset);
+    bm->write_block(next_block, data+offset);
     node->blocks[index] = next_block;
     ++index;
     offset += BLOCK_SIZE;
@@ -354,12 +359,11 @@ inode_manager::write_file(uint32_t inum, const char *buf, int size)
     bm->free_block(node->blocks[NDIRECT]);
   } else {
     for(blockid_t i = 0; i < need2 && i < NINDIRECT; ++i) {
-      bm->write_block(secondary[i], buf + offset);
+      bm->write_block(secondary[i], data + offset);
       offset += BLOCK_SIZE;
       //std::cout << secondary[i] << " ";
     }
   }
-
   //std::cout << std::endl;
   uint32_t t = time(nullptr);
   node->atime = t;
@@ -368,7 +372,8 @@ inode_manager::write_file(uint32_t inum, const char *buf, int size)
   node->size = size;
   put_inode(inum, node);
   free(node);
-//  printf("\tYES!\n");
+  free(data);
+  printf("\tYES!\n");
 }
 
 void
@@ -380,7 +385,10 @@ inode_manager::getattr(uint32_t inum, extent_protocol::attr &a)
    * you can refer to "struct attr" in extent_protocol.h
    */
   inode_t *node = get_inode(inum);
-  if(node == nullptr) return;
+  if(node == nullptr) {
+     printf("im: %u does not exist\n", inum);
+     return;
+  }
   a.type = node->type;
   a.size = node->size;
   a.atime = node->atime;
