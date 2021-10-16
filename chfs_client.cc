@@ -90,7 +90,6 @@ chfs_client::search(inum parent, const char *name, bool& found, inum &ino_out,
     extent_protocol::attr a;
     ec->getattr(parent, a);
     ec->get(parent, content);
-    std::cout << "size: " << content.size() << " " << content << std::endl;
 
     const Entry *buf = (Entry*)const_cast<char*>(content.c_str());
     int32_t top = a.size / sizeof(Entry);

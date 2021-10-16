@@ -11,15 +11,15 @@
 
 using namespace std;
 
-struct KeyVal {
+typedef struct {
     string key;
     string val;
-    KeyVal() = default;
-    KeyVal(string &k, string &v) {
-        swap(k, key);
-        swap(v, val);
-    }
-};
+}
+KeyVal;
+
+inline bool ischar(char ch) {
+    return ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z';
+}
 
 //
 // The map function is called once for each file of input. The first
@@ -32,15 +32,20 @@ vector<KeyVal> Map(const string &filename, const string &content)
 {
     // Your code goes here
     // Hints: split contents into an array of words.
-    stringstream ss(content);
     vector<KeyVal> res;
-    string key, value;
-    cout << "Map:" << endl;
-    while(ss >> key) {
-        ss >> value;
-        KeyVal tmp(key, value);
-        cout << tmp.key << " " << tmp.val << endl; 
+    int n = content.size();
+    int i = 0, j = 0;
+    while(true) {
+        while(i < n && !ischar(content[i])) ++i;
+        if(i == n) break;
+        string key;
+        KeyVal tmp;
+        j = i+1;
+        while(j < n && ischar(content[j])) ++j;
+        tmp.key = content.substr(i, j-i);
+        tmp.val = "1";
         res.emplace_back(tmp);
+        i = j+1;
     }
     return res;
 }
@@ -55,12 +60,9 @@ string Reduce(const string &key, const vector <string> &values)
     // Your code goes here
     // Hints: return the number of occurrences of the word.
     int res = 0;
-    cout << "Reduce:" << endl;
-    for(auto &s: values) {
-        cout << s << " ";
-        res += s == key;
-    }
-    cout << endl;
+    for(auto &s: values) 
+        res += stoi(s);
+
     return to_string(res);
 }
 
@@ -127,4 +129,5 @@ int main(int argc, char ** argv)
     }
     return 0;
 }
+
 
