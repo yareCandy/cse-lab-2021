@@ -17,6 +17,10 @@ typedef struct {
 }
 KeyVal;
 
+inline bool ischar(char ch) {
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+
 //
 // The map function is called once for each file of input. The first
 // argument is the name of the input file, and the second is the
@@ -28,7 +32,22 @@ vector<KeyVal> Map(const string &filename, const string &content)
 {
     // Your code goes here
     // Hints: split contents into an array of words.
-
+    vector<KeyVal> res;
+    int n = content.size();
+    int i = 0, j = 0;
+    while(true) {
+        while(i < n && !ischar(content[i])) ++i;
+        if(i == n) break;
+        string key;
+        KeyVal tmp;
+        j = i+1;
+        while(j < n && ischar(content[j])) ++j;
+        tmp.key = content.substr(i, j-i);
+        tmp.val = "1";
+        res.emplace_back(tmp);
+        i = j+1;
+    }
+    return res;
 }
 
 //
@@ -40,7 +59,11 @@ string Reduce(const string &key, const vector <string> &values)
 {
     // Your code goes here
     // Hints: return the number of occurrences of the word.
+    int res = 0;
+    for(auto &s: values) 
+        res += stoi(s);
 
+    return to_string(res);
 }
 
 int main(int argc, char ** argv)
@@ -106,4 +129,5 @@ int main(int argc, char ** argv)
     }
     return 0;
 }
+
 

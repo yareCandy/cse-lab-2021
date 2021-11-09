@@ -10,7 +10,7 @@ TEST_FILE1=foo.txt
 TEST_FILE2=${DIR}/foo.txt
 SRCFILE=tmprand
 
-dd if=/dev/urandom of=${SRCFILE} bs=1K count=400 >/dev/null 2>&1
+dd if=/dev/urandom of=${SRCFILE} bs=1K count=40 >/dev/null 2>&1
 
 echo "BLOB FILE TEST"
 
