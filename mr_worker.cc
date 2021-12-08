@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "lang/verify.h"
 
 #include "rpc.h"
 #include "mr_protocol.h"
@@ -22,6 +23,10 @@ struct KeyVal {
     string val;
 };
 
+inline bool ischar(char ch) {
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+
 //
 // The map function is called once for each file of input. The first
 // argument is the name of the input file, and the second is the
@@ -31,8 +36,23 @@ struct KeyVal {
 //
 vector<KeyVal> Map(const string &filename, const string &content)
 {
-	// Copy your code from mr_sequential.cc here.
-
+    // Copy your code from mr_sequential.cc here.
+    vector<KeyVal> res;
+    int n = content.size();
+    int i = 0, j = 0;
+    while(true) {
+        while(i < n && !ischar(content[i])) ++i;
+        if(i == n) break;
+        string key;
+        KeyVal tmp;
+        j = i+1;
+        while(j < n && ischar(content[j])) ++j;
+        tmp.key = content.substr(i, j-i);
+        tmp.val = "1";
+        res.emplace_back(tmp);
+        i = j+1;
+    }
+    return res;
 }
 
 //
@@ -40,10 +60,14 @@ vector<KeyVal> Map(const string &filename, const string &content)
 // map tasks, with a list of all the values created for that key by
 // any map task.
 //
-string Reduce(const string &key, const vector < string > &values)
+string Reduce(const string &key, const vector <string> &values)
 {
     // Copy your code from mr_sequential.cc here.
+    int res = 0;
+    for(auto &s: values) 
+        res += stoi(s);
 
+    return to_string(res);
 }
 
 
@@ -57,12 +81,12 @@ public:
 	void doWork();
 
 private:
-	void doMap(int index, const vector<string> &filenames);
+	void doMap(int index, const string &filenames);
 	void doReduce(int index);
 	void doSubmit(mr_tasktype taskType, int index);
 
 	mutex mtx;
-	int id;
+	int mapers;
 
 	rpcc *cl;
 	std::string basedir;
@@ -85,16 +109,58 @@ Worker::Worker(const string &dst, const string &dir, MAPF mf, REDUCEF rf)
 	}
 }
 
-void Worker::doMap(int index, const vector<string> &filenames)
+void Worker::doMap(int index, const string &filename)
 {
 	// Lab2: Your code goes here.
-
+	string content;
+	getline(ifstream(filename), content, '\0');
+	vector<KeyVal> KVS = mapf(filename, content);
+	vector<string> filecontent(REDUCER_COUNT);
+	char out[100];
+	for(auto &p: KVS) {
+		int belogs = std::hash<std::string>()(p.key) % REDUCER_COUNT;
+		filecontent[belogs] += p.key + " " + p.val + " ";
+	}
+	for(int i = 0; i < REDUCER_COUNT; ++i) {
+		sprintf(out, "%s/mr_%d_%d.tmp", basedir.c_str(), index, i);
+		// string path = basedir + "/mr_" + to_string(index) + "_" + to_string(i)+".tmp"
+		ofstream os(out);
+		os << filecontent[i];
+	}
+	doSubmit(MAP, index);
 }
 
 void Worker::doReduce(int index)
 {
 	// Lab2: Your code goes here.
+	map<string, vector<string>> tab;
+	char filename[100];
+	string key, value;
+	for(int i = 0; i < mapers; ++i) {
+		sprintf(filename, "%s/mr_%d_%d.tmp", basedir.c_str(), i, index);
+		ifstream is(filename);
+		while(is >> key) {
+			is >> value;
+			if(tab.find(key) == tab.end()) {
+				tab[key] = vector<string>(1, value);
+			} else {
+				tab[key].emplace_back(value);
+			}
+		}
+	}
 
+	string res;
+	sprintf(filename, "%s/mr-out_%d.out", basedir.c_str(), index);
+	for(auto it = tab.begin(); it != tab.end(); ++it) {
+		value = reducef(it->first, it->second);
+		res += it->first;
+		res += " ";
+		res += value;
+		res += "\n";
+	}
+	ofstream os(filename);
+	os << res;
+	doSubmit(REDUCE, index);
 }
 
 void Worker::doSubmit(mr_tasktype taskType, int index)
@@ -118,7 +184,14 @@ void Worker::doWork()
 		// if mr_tasktype::REDUCE, then doReduce and doSubmit
 		// if mr_tasktype::NONE, meaning currently no work is needed, then sleep
 		//
-
+		mr_protocol::AskTaskResponse response;
+		// 封装一个 req 发起请求
+		mr_protocol::status status = cl->call(mr_protocol::asktask, 0, response);
+		VERIFY( status == mr_protocol::OK );
+		mapers = response.mapers;
+		if(response.type == MAP) doMap(response.index, response.filename);
+		else if(response.type == REDUCE) doReduce(response.index);
+		else sleep(1);
 	}
 }
 
@@ -137,4 +210,5 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
 
