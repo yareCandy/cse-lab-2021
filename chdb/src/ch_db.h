@@ -8,6 +8,7 @@
 using shard_dispatch = int (*)(int key, int shard_num);
 using chdb_raft = raft<chdb_state_machine, chdb_command>;
 using chdb_raft_group = raft_group<chdb_state_machine, chdb_command>;
+const int wait_timeout = 50;
 
 /**
  * Master node
@@ -62,6 +63,41 @@ public:
             const chdb_protocol::operation_var &var,
             int &r);
 
+    /**
+    * Send prepare to shard servers
+    * */
+    int 
+    prepare(unsigned int query_key,
+            unsigned int proc,
+            const chdb_protocol::prepare_var &var,
+            int &r);
+
+    /**
+    * Send commit to shard servers
+    * */
+    int 
+    commit(unsigned int query_key,
+           unsigned int proc,
+           const chdb_protocol::commit_var &var,
+           int &r);
+
+    /**
+    * Send rollback to shard servers
+    * */
+    int 
+    rollback(unsigned int query_key,
+             unsigned int proc,
+             const chdb_protocol::rollback_var &var,
+             int &r);
+
+    /**
+    * Send checkstate to shard servers
+    * */
+    int 
+    check_prepare(unsigned int query_key,
+                  unsigned int proc,
+                  const chdb_protocol::check_prepare_state_var &var,
+                  int &r);
 
     ~view_server();
 

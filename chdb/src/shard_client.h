@@ -11,6 +11,20 @@ public:
     int value;
 };
 
+class chdb_log_entry {
+public:
+    chdb_log_entry() = default;
+    // chdb_log_entry(chdb_protocol::rpc_numbers op, chdb_log &e):
+    //         operation(op), entry(entry) {}
+    chdb_log_entry(chdb_protocol::rpc_numbers op, int t_id, int k = -1, int n_v=-1, int o_v=-1): 
+            operation(op), tx_id(t_id), key(k), new_v(n_v), old_v(o_v) {}
+    chdb_protocol::rpc_numbers operation;
+    int tx_id;
+    int key;
+    int new_v;
+    int old_v;
+};
+
 /**
  * Storage layer for each shard. Support fault tolerance.
  * */
@@ -19,6 +33,8 @@ public:
     shard_client(const int shard_id, const int port) : active(true),
                                                        shard_id(shard_id),
                                                        node(new rpc_node(port)) {
+        // log path name
+        // this->log_name = std::string("temp_log/") + std::to_string(shard_id);
         this->store.resize(this->replica_num);
         // reg rpc handlers. You may add more handlers if necessary.
         this->node->reg(chdb_protocol::Dummy, this, &shard_client::dummy);
@@ -87,5 +103,34 @@ public:
     std::vector<std::map<int, value_entry>> store;
     int primary_replica = 0;
     int replica_num = 5;
+
+    // key: tx_id, value: log entry
+    std::map<int, std::vector<chdb_log_entry>> redo_log;
+
+    // std::string log_name;
+// private:
+//     bool write_log(std::string &op, chdb_log &entry) {
+//         std::ofstream os(log_name, std::ios::app);
+//         if(!os) return false;
+//         os << op << " ";
+//         os << entry.tx_id << " ";
+//         os << entry.key << " ";
+//         os << entry.new_v << " ";
+//         os << entry.old_v << "\n";
+//         os.close();
+//         return true;
+//     }
+
+//     int atoi(std::string& s) {
+//         int res = 0;
+//         for(auto ch: s) {
+//             if(ch >= '0' && ch <= '9') {
+//                 res = res * 10 + ch - '0';
+//             } else {
+//                 break;
+//             }
+//         }
+//         return res;
+//     }
 
 };
