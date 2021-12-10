@@ -161,11 +161,21 @@ public:
         return res;
     }
 
+    // big lock
+    void start_tx() {
+        tx_mutex.lock();
+    }
+
+    void end_tx() {
+        tx_mutex.unlock();
+    }
+
     view_server *vserver;
 
     std::vector<shard_client *> shards;
     int max_tx_id;
     std::mutex tx_id_mtx;
+    std::mutex tx_mutex;
 
 private:
     static int default_dispatch(const int key, int shard_num) {

@@ -63,7 +63,9 @@ int shard_client::commit(chdb_protocol::commit_var var, int &r) {
         for(auto &entry: log) {
             value_entry value;
             value.value = entry.new_v;
-            data[entry.key] = value;
+            for(int j = 0; j < replica_num; ++j) {
+                store[j][entry.key] = value;
+            }
         }
         redo_log.erase(var.tx_id);
         r = 1;

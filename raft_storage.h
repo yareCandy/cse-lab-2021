@@ -20,8 +20,6 @@ public:
     void recovery_from_storage(int &term, int &vote_for, std::vector<log_entry<command>> &log);
     void recovery_from_snapshot(int &last_include_index, int &last_include_term, std::vector<char> &snapshot);
 
-    static void int_to_charA(char *buf, int value);
-    static void charA_to_int(const char* buf, int &value);
     static const int BUFFER_SIZE = 10000;
     static const int INT_SIZE = 4;
 private:
@@ -53,24 +51,6 @@ raft_storage<command>::~raft_storage() {
 }
 
 template<typename command>
-void raft_storage<command>::int_to_charA(char *buf, int value) {
-    buf[0] = (value >> 24) & 0xff;
-    buf[1] = (value >> 16) & 0xff;
-    buf[2] = (value >> 8) & 0xff;
-    buf[3] = value & 0xff;
-}
-
-
-template<typename command>
-void raft_storage<command>::charA_to_int(const char *buf, int &value) {
-    value = (buf[0] & 0xff) << 24;
-    value |= (buf[1] & 0xff) << 16;
-    value |= (buf[2] & 0xff) << 8;
-    value |= buf[3] & 0xff;
-}
-
-
-template<typename command>
 void raft_storage<command>::persist_to_storage(int term, int vote_for, std::vector<log_entry<command>> &log) {
     // std::cout << "Persist to storage" << std::endl;
     std::unique_lock<std::mutex> lk(mtx_meta);
@@ -86,11 +66,11 @@ void raft_storage<command>::persist_to_storage(int term, int vote_for, std::vect
     std::ofstream length(length_path, std::ios::binary);
     for(const auto &entry: log) {
         int size = entry.cmd.size();
-        int_to_charA(len, size);
+        raft_command::int_to_charA(len, size);
         length.write(len, INT_SIZE);
 
-        int_to_charA(buf, entry.term);
-        int_to_charA(buf+INT_SIZE, entry.index);
+        raft_command::int_to_charA(buf, entry.term);
+        raft_command::int_to_charA(buf+INT_SIZE, entry.index);
         entry.cmd.serialize(buf+INT_SIZE+INT_SIZE, size);
         storage.write(buf, size+INT_SIZE+INT_SIZE);
     }
@@ -109,11 +89,11 @@ void raft_storage<command>::persist_log_entry(log_entry<command>& entry) {
     std::unique_lock<std::mutex> lk2(mtx_length);
     std::ofstream storage(data_path, std::ios::app|std::ios::binary);
     std::ofstream length(length_path, std::ios::app|std::ios::binary);
-    int_to_charA(len, size);
+    raft_command::int_to_charA(len, size);
     length.write(len, INT_SIZE);
 
-    int_to_charA(buf, entry.term);
-    int_to_charA(buf+INT_SIZE, entry.index);
+    raft_command::int_to_charA(buf, entry.term);
+    raft_command::int_to_charA(buf+INT_SIZE, entry.index);
     entry.cmd.serialize(buf+INT_SIZE+INT_SIZE, size);
     storage.write(buf, size+INT_SIZE+INT_SIZE);
     storage.close();
@@ -139,8 +119,8 @@ void raft_storage<command>::persist_snapshot(int last_include_index,
         lk2.unlock();
         return;
     }
-    int_to_charA(buf, last_include_index);
-    int_to_charA(buf+INT_SIZE, last_include_term);
+    raft_command::int_to_charA(buf, last_include_index);
+    raft_command::int_to_charA(buf+INT_SIZE, last_include_term);
     storage.write(buf, 2*INT_SIZE);
     storage.write(snapshot.data(), snapshot.size());
     storage.close();
@@ -170,14 +150,14 @@ void raft_storage<command>::recovery_from_storage(int &term, int &vote_for, std:
     std::vector<log_entry<command>> newLog;
     while(length.read(len, INT_SIZE)) {
         int size = -1;
-        charA_to_int(len, size);
+        raft_command::charA_to_int(len, size);
         // std::cout << "cmd size: " << size << std::endl;
         if(size < 0) break;
 
         log_entry<command> entry;
         storage.read(buf, size+INT_SIZE+INT_SIZE);
-        charA_to_int(buf, entry.term);
-        charA_to_int(buf+INT_SIZE, entry.index);
+        raft_command::charA_to_int(buf, entry.term);
+        raft_command::charA_to_int(buf+INT_SIZE, entry.index);
         entry.cmd.deserialize(buf+INT_SIZE+INT_SIZE, size);
         // std::cout << "\tterm: "<< entry.term << " index: " << entry.index << " size: " << size+INT_SIZE+INT_SIZE <<  " value: " << entry.cmd.value << std::endl;
         newLog.push_back(std::move(entry));
@@ -197,8 +177,8 @@ void raft_storage<command>::recovery_from_snapshot(int &last_include_index,
         return;
     }
     storage.read(buf, BUFFER_SIZE);
-    charA_to_int(buf, last_include_index);
-    charA_to_int(buf+INT_SIZE, last_include_term);
+    raft_command::charA_to_int(buf, last_include_index);
+    raft_command::charA_to_int(buf+INT_SIZE, last_include_term);
     std::vector<char> tmp;
     for(int i = 2*INT_SIZE; i < BUFFER_SIZE; ++i) {
         tmp.push_back(buf[i]);

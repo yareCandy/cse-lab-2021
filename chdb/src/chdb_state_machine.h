@@ -42,6 +42,10 @@ public:
     virtual void serialize(char *buf, int size) const override;
 
     virtual void deserialize(const char *buf, int size);
+
+    static void int_to_charA(char *buf, int value);
+
+    static void charA_to_int(const char* buf, int &value);
 };
 
 marshall &operator<<(marshall &m, const chdb_command &cmd);
@@ -65,4 +69,6 @@ public:
     // Apply the snapshot to the state mahine.
     // In Chdb, you don't need to implement this function
     virtual void apply_snapshot(const std::vector<char> &) {}
+
+    std::map<int, int> commands;
 };

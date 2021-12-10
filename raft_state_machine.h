@@ -18,6 +18,18 @@ public:
     virtual int size() const = 0;
     virtual void serialize(char* buf, int size) const = 0;
     virtual void deserialize(const char* buf, int size) = 0;
+    static void int_to_charA(char *buf, int value) {
+        buf[0] = (value >> 24) & 0xff;
+        buf[1] = (value >> 16) & 0xff;
+        buf[2] = (value >> 8) & 0xff;
+        buf[3] = value & 0xff;
+    }
+    static void charA_to_int(const char* buf, int &value) {
+        value = (buf[0] & 0xff) << 24;
+        value |= (buf[1] & 0xff) << 16;
+        value |= (buf[2] & 0xff) << 8;
+        value |= buf[3] & 0xff;
+    }
 };
 
 class raft_state_machine {

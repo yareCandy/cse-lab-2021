@@ -1,3 +1,4 @@
+#include <mutex>
 #include "ch_db.h"
 
 
@@ -9,11 +10,13 @@ public:
     tx_region(chdb *db) : db(db),
                           tx_id(db->next_tx_id()) {
         this->tx_begin();
+        this->db->start_tx();
     }
 
     ~tx_region() {
         if (this->tx_can_commit() == chdb_protocol::prepare_ok) this->tx_commit();
         else this->tx_abort();
+        this->db->end_tx();
     }
 
     /**
